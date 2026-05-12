@@ -1,3 +1,6 @@
+باشه. کل کد رو کپی کن و جایگزین کن:
+
+```yaml
 name: Generate VLESS Config
 on: workflow_dispatch
 jobs:
@@ -7,9 +10,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run G2Ray
         run: |
-          chmod +x start.sh
-          ./start.sh 2>&1 | tee output.log
+          chmod +x setup.sh
+          ./setup.sh 2>&1 | tee output.log
       - uses: actions/upload-artifact@v4
         with:
           name: my-vless-config
           path: output.log
+```
