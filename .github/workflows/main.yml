@@ -1,35 +1,20 @@
-name: Generate and Commit VLESS Config
+name: Fetch and Commit Working VLESS Config
 on:
   workflow_dispatch:
 jobs:
-  build:
+  update-config:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Xray and run to get config
+      - name: Download latest VLESS configs
         run: |
-          # دانلود و نصب Xray
-          wget -q -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
-          unzip -q /tmp/xray.zip -d /tmp/xray
-          sudo cp /tmp/xray/xray /usr/local/bin/xray
-          sudo chmod +x /usr/local/bin/xray
+          curl -s -L -o /tmp/sub_merge.txt "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_merge.txt"
+          grep -m 1 'vless://' /tmp/sub_merge.txt > vless_link.txt || echo "No active VLESS found" > vless_link.txt
 
-          # کپی config.json پروژه
-          sudo mkdir -p /usr/local/etc/xray
-          sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
-
-          # اجرای Xray با تایم‌اوت ۲۰ ثانیه و گرفتن خروجی
-          sudo timeout 20 /usr/local/bin/xray run -c /usr/local/etc/xray/config.json 2>&1 | tee /tmp/xray-output.log &
-          sleep 10
-
-          # استخراج لینک VLESS از خروجی (اگه تولید شده باشه)
-          grep -Eo 'vless://[^ ]+' /tmp/xray-output.log > vless_link.txt || echo "Link not found" > vless_link.txt
-
-      - name: Commit and push the config file
+      - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vless_link.txt
-          git commit -m "Add VLESS config link" || echo "No changes to commit"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update VLESS config link" && git push)
