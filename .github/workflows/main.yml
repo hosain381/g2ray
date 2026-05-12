@@ -1,4 +1,4 @@
-name: Run G2Ray via install.sh
+name: Generate and Commit VLESS Config
 on:
   workflow_dispatch:
 jobs:
@@ -6,26 +6,30 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Run install steps (without deleting repo)
+
+      - name: Install Xray and run to get config
         run: |
-          # همان دستورات install.sh، ولی بدون rm -rf خطرناک
-          wget -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
-          unzip /tmp/xray.zip -d /tmp/xray
+          # دانلود و نصب Xray
+          wget -q -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
+          unzip -q /tmp/xray.zip -d /tmp/xray
           sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
-          
-          # کپی config.json به مسیر استاندارد
+
+          # کپی config.json پروژه
           sudo mkdir -p /usr/local/etc/xray
           sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
-          
-          # اجرای Xray به مدت 10 ثانیه و گرفتن خروجی
-          sudo timeout 10 /usr/local/bin/xray run -c /usr/local/etc/xray/config.json 2>&1 | tee /tmp/xray-output.log || true
-          
-      - name: Show collected output (VLESS link)
-        run: cat /tmp/xray-output.log
-        
-      - uses: actions/upload-artifact@v4
-        with:
-          name: g2ray-config
-          path: /tmp/xray-output.log
+
+          # اجرای Xray با تایم‌اوت ۲۰ ثانیه و گرفتن خروجی
+          sudo timeout 20 /usr/local/bin/xray run -c /usr/local/etc/xray/config.json 2>&1 | tee /tmp/xray-output.log &
+          sleep 10
+
+          # استخراج لینک VLESS از خروجی (اگه تولید شده باشه)
+          grep -Eo 'vless://[^ ]+' /tmp/xray-output.log > vless_link.txt || echo "Link not found" > vless_link.txt
+
+      - name: Commit and push the config file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vless_link.txt
+          git commit -m "Add VLESS config link" || echo "No changes to commit"
+          git push
