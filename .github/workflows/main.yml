@@ -1,16 +1,31 @@
-name: Generate VLESS Config
+name: Run G2Ray via install.sh
 on:
   workflow_dispatch:
 jobs:
-  run:
+  build:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Run G2Ray
+      
+      - name: Run install steps (without deleting repo)
         run: |
-          chmod +x setup.sh
-          ./setup.sh 2>&1 | tee output.log
+          # همان دستورات install.sh، ولی بدون rm -rf خطرناک
+          wget -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
+          unzip /tmp/xray.zip -d /tmp/xray
+          sudo cp /tmp/xray/xray /usr/local/bin/xray
+          sudo chmod +x /usr/local/bin/xray
+          
+          # کپی config.json به مسیر استاندارد
+          sudo mkdir -p /usr/local/etc/xray
+          sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
+          
+          # اجرای Xray به مدت 10 ثانیه و گرفتن خروجی
+          sudo timeout 10 /usr/local/bin/xray run -c /usr/local/etc/xray/config.json 2>&1 | tee /tmp/xray-output.log || true
+          
+      - name: Show collected output (VLESS link)
+        run: cat /tmp/xray-output.log
+        
       - uses: actions/upload-artifact@v4
         with:
-          name: my-vless-config
-          path: output.log
+          name: g2ray-config
+          path: /tmp/xray-output.log
