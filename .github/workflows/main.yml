@@ -1,4 +1,4 @@
-name: Final Xray Test
+name: Final Xray v26 with xhttp
 on: workflow_dispatch
 jobs:
   build:
@@ -6,14 +6,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download and Install Xray
+      - name: Download and Install Latest Xray (v26)
         run: |
-          wget -q "https://github.com/XTLS/Xray-core/releases/download/v1.8.23/Xray-linux-64.zip" -O /tmp/xray.zip
+          wget -q "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip" -O /tmp/xray.zip
           unzip -q /tmp/xray.zip -d /tmp/xray
           sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
+          echo "Xray version:"
+          /usr/local/bin/xray version
 
-      - name: Run Xray and Capture Output
+      - name: Run Xray with project config
         run: |
           sudo mkdir -p /usr/local/etc/xray
           sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
@@ -21,8 +23,8 @@ jobs:
           sleep 15
           sudo pkill xray || true
 
-      - name: Save Xray Log as Artifact
+      - name: Upload Xray log
         uses: actions/upload-artifact@v4
         with:
-          name: xray-log
+          name: xray-log-v26
           path: /tmp/xray.log
