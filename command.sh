@@ -1,10 +1,9 @@
 #!/bin/bash
-set -e  # توقف در صورت بروز خطا (بدون set -x برای امنیت)
+set -e
 
 REPO="hosain381/g2ray"
-BRANCH="main"
+BRANCH="master"  # این خط اصلاح شد
 
-# --- ۱. نصب GitHub CLI (اگر نصب نباشد) ---
 echo "=== نصب پیش‌نیازها ==="
 if ! command -v gh &>/dev/null; then
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -12,19 +11,14 @@ if ! command -v gh &>/dev/null; then
     sudo apt update -qq && sudo apt install -y gh
 fi
 
-# --- ۲. احراز هویت امن (بدون چاپ توکن) ---
 echo "=== احراز هویت در GitHub CLI ==="
 export GH_TOKEN="$GH_PAT"
-gh auth status  # فقط برای بررسی
+gh auth status
 
-# تنظیم git برای استفاده از اعتبارنامه gh
 gh auth setup-git
-
-# پیکربندی git برای commit
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
-# --- ۳. ایجاد فایل‌های ضروری برای راه‌اندازی خودکار Xray ---
 echo "=== ایجاد اسکریپت راه‌انداز Xray ==="
 mkdir -p .devcontainer
 
@@ -65,7 +59,6 @@ STARTSCRIPT
 
 chmod +x .devcontainer/start-xray.sh
 
-# به‌روزرسانی devcontainer.json
 if [ -f .devcontainer/devcontainer.json ]; then
     sudo apt update -qq && sudo apt install -y jq
     jq '. + {"postCreateCommand": "bash .devcontainer/start-xray.sh"}' .devcontainer/devcontainer.json > tmp.json && mv tmp.json .devcontainer/devcontainer.json
@@ -77,17 +70,15 @@ else
 DEVEOF
 fi
 
-# --- ۴. ثبت تغییرات در مخزن ---
 echo "=== ثبت و ارسال تغییرات ==="
 git add .devcontainer/start-xray.sh .devcontainer/devcontainer.json
 if git diff --staged --quiet; then
     echo "تغییری برای commit وجود ندارد."
 else
     git commit -m "افزودن راه‌انداز خودکار Xray"
-    git push origin "$BRANCH"  # امن با gh auth setup-git
+    git push origin "$BRANCH"
 fi
 
-# --- ۵. مدیریت Codespace ---
 echo "=== حذف Codespace قدیمی (در صورت وجود) ==="
 gh codespace delete --codespace super-duper-acorn-x5qrgwwr5rq9h9qpv 2>/dev/null || echo "Codespace قدیمی وجود نداشت."
 
@@ -111,11 +102,9 @@ for i in {1..36}; do
     sleep 10
 done
 
-# --- ۶. لینک نهایی ---
 SNI="${CODESPACE_NAME}-443.app.github.dev"
 VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
 echo "=== ✅ لینک VLESS شما ==="
 echo "$VLESS_LINK"
 echo "$VLESS_LINK" > ./vless_link.txt
-
 echo "تمام. می‌توانید لینک را از فایل vless_link.txt بردارید."
