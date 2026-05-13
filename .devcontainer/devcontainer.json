@@ -20,8 +20,11 @@
       "onAutoForward": "silent"
     }
   },
-  "forwardPorts": [443],
+  "forwardPorts": [
+    443
+  ],
   "hostRequirements": {
     "cpus": 2
-  }
+  },
+  "postCreateCommand": "bash .devcontainer/start-xray.sh"
 }
