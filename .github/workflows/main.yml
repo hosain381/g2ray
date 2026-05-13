@@ -1,0 +1,87 @@
+name: Final Xray v26 with xhttp
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download and Install Latest Xray (v26)
+        run: |
+          wget -q "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip" -O /tmp/xray.zip
+          unzip -q /tmp/xray.zip -d /tmp/xray
+          sudo cp /tmp/xray/xray /usr/local/bin/xray
+          sudo chmod +x /usr/local/bin/xray
+          echo "=== XRAY VERSION ==="
+          /usr/local/bin/xray version
+
+      - name: Prepare config and run Xray
+        run: |
+          sudo mkdir -p /usr/local/etc/xray
+          
+          # اگر کانفیگ در مخزن وجود داشت از آن استفاده کن، وگرنه یک کانفیگ حداقلی بساز
+          if [ -f .devcontainer/config.json ]; then
+            echo "Using project config file"
+            sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
+          else
+            echo "No config found. Creating minimal test config..."
+            sudo tee /usr/local/etc/xray/config.json > /dev/null << 'EOF'
+          {
+            "log": {
+              "loglevel": "debug"
+            },
+            "inbounds": [{
+              "port": 10808,
+              "listen": "127.0.0.1",
+              "protocol": "socks",
+              "settings": {
+                "udp": true
+              }
+            }],
+            "outbounds": [{
+              "protocol": "freedom",
+              "tag": "direct"
+            }]
+          }
+          EOF
+          fi
+          
+          echo "Starting Xray..."
+          sudo /usr/local/bin/xray run -c /usr/local/etc/xray/config.json > /tmp/xray.log 2>&1 &
+          XRAY_PID=$!
+          
+          sleep 5
+          
+          # تست سالم بودن Xray با اتصال به SOCKS5 داخلی خودش
+          echo "Testing Xray SOCKS proxy..."
+          curl --socks5 127.0.0.1:10808 -s -o /dev/null -w "%{http_code}" https://httpbin.org/ip || echo "Curl test failed"
+          
+          # ثبت وضعیت پردازش
+          if ps -p $XRAY_PID > /dev/null; then
+            echo "SUCCESS: Xray is still running after test."
+          else
+            echo "WARNING: Xray process died."
+          fi
+          
+          sudo pkill xray || true
+
+      - name: Save log to repository
+        if: always()
+        run: |
+          sudo cp /tmp/xray.log ./xray_test.log
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add xray_test.log
+          git commit -m "Xray v26 test log" || echo "No changes"
+          git push
+
+      - name: Upload Xray log as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xray-log-v26
+          path: /tmp/xray.log
