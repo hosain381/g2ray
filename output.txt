@@ -1,16 +1,2 @@
-./command.sh: line 2: name:: command not found
-./command.sh: line 3: build:: command not found
-./command.sh: line 4: dockerfile:: command not found
-./command.sh: line 5: },: command not found
-./command.sh: line 6: features:: command not found
-./command.sh: line 7: ghcr.io/devcontainers/features/sshd:1:: No such file or directory
-./command.sh: line 8: version:: command not found
-./command.sh: line 10: },: command not found
-./command.sh: line 11: forwardPorts:: command not found
-./command.sh: line 12: portsAttributes:: command not found
-./command.sh: line 13: 443:: command not found
-./command.sh: line 14: label:: command not found
-./command.sh: line 15: onAutoForward:: command not found
-./command.sh: line 16: visibility:: command not found
-./command.sh: line 17: syntax error near unexpected token `}'
-./command.sh: line 17: `    }'
+=== لینک VLESS ===
+vless://550e8400-e29b-41d4-a716-446655440000@super-duper-acorn-x5qrgwwr5rq9h9qpv-443.app.github.dev:443?encryption=none&security=tls&type=xhttp&mode=packet-up
