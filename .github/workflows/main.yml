@@ -1,15 +1,15 @@
-name: Install Xray from external repo
+name: Test Xray Installation
 on: workflow_dispatch
 jobs:
-  install:
+  test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Download Xray from external repo
+      - name: Download and install Xray
         run: |
-          wget -O /tmp/Xray-linux-64.zip "https://github.com/hosain381/aio-downloader/raw/refs/heads/main/direct/Xray-linux-64.zip_ezqld.zip"
-          unzip /tmp/Xray-linux-64.zip -d /tmp/xray
+          wget -O /tmp/xray.zip "https://github.com/hosain381/aio-downloader/raw/refs/heads/main/direct/Xray-linux-64.zip_ezqld.zip"
+          unzip /tmp/xray.zip -d /tmp/xray
           sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
-          echo "Xray installed successfully."
-      - name: Verify Xray version
+          echo "Installation steps done."
+      - name: Check Xray version
         run: /usr/local/bin/xray version
