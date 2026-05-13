@@ -13,18 +13,18 @@ jobs:
 
       - name: Install Xray
         run: |
-          # دانلود فایل zip
-          wget -O /tmp/xray.zip "https://github.com/hosain381/aio-downloader/raw/refs/heads/main/direct/Xray-linux-64.zip_ezqld.zip"
+          # دانلود فایل زیپ (از منبع رسمی یا جایگزین)
+          wget -O /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip"
           
           # استخراج فایل‌ها
           unzip /tmp/xray.zip -d /tmp/xray_extracted
 
-          # نمایش محتوای استخراج‌شده برای عیب‌یابی (اختیاری ولی مفید)
+          # نمایش محتوای استخراج‌شده برای عیب‌یابی
           echo "=== محتوای پوشه استخراج‌شده ==="
-          find /tmp/xray_extracted -type f
+          find /tmp/xray_extracted -type f -printf "%p\n"
           
-          # پیدا کردن فایل اجرایی xray (بدون توجه به نام دقیق یا مسیر)
-          XRAY_BIN=$(find /tmp/xray_extracted -type f -name "xray" -o -name "xray_*" | head -n 1)
+          # جستجوی انعطاف‌پذیرتر برای فایل اجرایی xray
+          XRAY_BIN=$(find /tmp/xray_extracted -type f \( -name "xray" -o -name "xray_*" -o -name "xray-linux-64" \) | head -n 1)
           
           if [ -z "$XRAY_BIN" ]; then
             echo "::error::فایل اجرایی xray در محتوای zip پیدا نشد"
