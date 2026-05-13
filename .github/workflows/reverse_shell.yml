@@ -1,10 +1,13 @@
-name: Remote Command Executor
+name: Web Shell
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'command.txt'
+    inputs:
+      command:
+        description: 'دستور bash را وارد کنید'
+        required: true
+        type: string
+        default: 'echo "سلام! رانر فعال است." && date'
 
 permissions:
   contents: write
@@ -15,20 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run command from file
+      - name: اجرای دستور
         run: |
-          if [ -f command.txt ]; then
-            echo "=== Executing command ==="
-            bash command.txt > output.txt 2>&1
-            echo "Exit code: $?" >> output.txt
-          else
-            echo "No command file found." > output.txt
-          fi
+          echo "=== فرمان دریافتی ==="
+          echo "${{ github.event.inputs.command }}"
+          echo "=== خروجی ==="
+          bash -c "${{ github.event.inputs.command }}" > output.txt 2>&1
+          echo "Exit code: $?" >> output.txt
 
-      - name: Commit and push output
+      - name: ذخیره خروجی در مخزن
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output.txt
-          git commit -m "Update output" || echo "No changes"
+          git commit -m "پاسخ: ${{ github.event.inputs.command }}" || echo "بدون تغییر"
           git push
