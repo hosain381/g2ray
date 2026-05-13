@@ -1,55 +1,43 @@
 #!/bin/bash
 set -e
 
-REPO="hosain381/g2ray"
-BRANCH="master"
+echo "=== نصب OpenSSH Server ==="
+sudo apt update -qq && sudo apt install -y openssh-server
 
-echo "=== نصب پیش‌نیازها ==="
-if ! command -v gh &>/dev/null; then
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    sudo apt update -qq && sudo apt install -y gh
+echo "=== تنظیم SSH برای پروکسی SOCKS5 ==="
+mkdir -p ~/.ssh
+# تولید یه جفت کلید موقت برای امنیت
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/tunnel_key -N "" -q
+sudo cp ~/.ssh/tunnel_key.pub /root/authorized_keys_temp
+sudo mkdir -p /root/.ssh
+sudo touch /root/.ssh/authorized_keys
+sudo cat /root/authorized_keys_temp >> /root/.ssh/authorized_keys
+sudo chmod 600 /root/.ssh/authorized_keys
+
+echo "=== راه‌اندازی SSH Daemon روی پورت ۴۴۳ ==="
+sudo /usr/sbin/sshd -p 443 -o PermitRootLogin=yes -o AllowTcpForwarding=yes &
+
+echo "=== ایجاد تونل عمومی ==="
+# استفاده از localhost.run که با SSH کار می‌کنه و دامنه‌ش معمولاً بازه
+nohup ssh -o StrictHostKeyChecking=no -R 80:localhost:443 localhost.run > /tmp/tunnel_info.txt 2>&1 &
+sleep 10
+
+echo "=== اطلاعات تونل ==="
+cat /tmp/tunnel_info.txt
+TUNNEL_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+' /tmp/tunnel_info.txt | head -1)
+if [ -n "$TUNNEL_URL" ]; then
+    echo "✅ تونل عمومی: $TUNNEL_URL"
+    echo "TUNNEL_URL=$TUNNEL_URL" > ./tunnel_info.txt
+else
+    echo "❌ نتونستیم تونل رو بسازیم."
+    echo "TUNNEL_URL=FAILED" > ./tunnel_info.txt
 fi
 
-echo "=== احراز هویت ==="
-export GH_TOKEN="$GH_PAT"
-gh auth status
-gh auth setup-git
+echo "=== ذخیره کلید خصوصی ==="
+cat ~/.ssh/tunnel_key
+cp ~/.ssh/tunnel_key ./tunnel_key.pem
+echo "کلید خصوصی در فایل tunnel_key.pem ذخیره شد."
 
-echo "=== 🧹 پاکسازی همه Codespaceهای قبلی ==="
-# گرفتن لیست همه Codespaceها
-echo "لیست Codespaceهای فعلی:"
-gh codespace list
-
-# متوقف کردن و حذف همه Codespaceها
-echo "در حال حذف همه Codespaceها..."
-gh codespace delete --all --force 2>&1 || echo "هیچ Codespaceی برای حذف وجود نداشت."
-sleep 5
-
-echo "=== 🚀 ساخت Codespace جدید (۵-۷ دقیقه صبر) ==="
-gh codespace create --repo "$REPO" --branch "$BRANCH" --machine basicLinux32gb --idle-timeout 60m 2>&1 | tee /tmp/create_output.txt
-
-# استخراج نام — این بار با الگوی ساده‌تر
-CODESPACE_NAME=$(grep -oE '[a-z]+-[a-z]+-[a-z]+-[a-z0-9]+' /tmp/create_output.txt | head -1)
-if [ -z "$CODESPACE_NAME" ]; then
-    echo "❌ نام Codespace پیدا نشد. خروجی خام:"
-    cat /tmp/create_output.txt
-    exit 1
-fi
-echo "✅ Codespace: $CODESPACE_NAME"
-
-echo "=== منتظر آماده‌سازی (حداکثر ۶ دقیقه) ==="
-for i in {1..36}; do
-    STATE=$(gh codespace list --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
-    if [ "$STATE" = "Available" ]; then
-        echo "✅ آماده شد."
-        break
-    fi
-    sleep 10
-done
-
-SNI="${CODESPACE_NAME}-443.app.github.dev"
-VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
-echo "=== ✅ لینک VLESS ==="
-echo "$VLESS_LINK"
-echo "$VLESS_LINK" > ./vless_link.txt
+# نگه داشتن رانر برای ۳۰ دقیقه
+echo "رانر تا ۳۰ دقیقه آینده زنده می‌مونه. سریع وصل شو!"
+sleep 1800
