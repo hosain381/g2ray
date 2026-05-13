@@ -1,15 +1,22 @@
-name: Test Xray Installation
+name: Definitive Xray Test
 on: workflow_dispatch
 jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Download and install Xray
+      - uses: actions/checkout@v4
+      - name: Install Xray
         run: |
           wget -O /tmp/xray.zip "https://github.com/hosain381/aio-downloader/raw/refs/heads/main/direct/Xray-linux-64.zip_ezqld.zip"
           unzip /tmp/xray.zip -d /tmp/xray
           sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
-          echo "Installation steps done."
-      - name: Check Xray version
-        run: /usr/local/bin/xray version
+      - name: Save Xray version to file
+        run: /usr/local/bin/xray version > xray_version.txt 2>&1
+      - name: Commit and push version file
+        run: |
+          git config user.name "test"
+          git config user.email "test@test.com"
+          git add xray_version.txt
+          git commit -m "Add Xray version proof" || echo "No changes"
+          git push
