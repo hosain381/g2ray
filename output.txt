@@ -1,2 +1,16 @@
-=== لینک VLESS ===
-vless://550e8400-e29b-41d4-a716-446655440000@super-duper-acorn-x5qrgwwr5rq9h9qpv-443.app.github.dev:443?encryption=none&security=tls&type=xhttp&mode=packet-up
+=== ورود به GitHub CLI ===
+=== ویرایش devcontainer.json برای راه‌اندازی خودکار Xray ===
+Cloning into '/tmp/repo'...
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: empty ident name (for <runner@runnervmrc6n4.v5e4emb4g0fe1gtqiypbmk00ec.dx.internal.cloudapp.net>) not allowed
