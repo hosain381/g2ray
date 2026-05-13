@@ -1,20 +1,28 @@
-name: Fetch and Commit Working VLESS Config
-on:
-  workflow_dispatch:
+name: Install Xray and Generate VLESS Config
+on: workflow_dispatch
 jobs:
-  update-config:
+  run:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download latest VLESS configs
+      - name: Install Xray
         run: |
-          curl -s -L -o /tmp/sub_merge.txt "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_merge.txt"
-          grep -m 1 'vless://' /tmp/sub_merge.txt > vless_link.txt || echo "No active VLESS found" > vless_link.txt
-
-      - name: Commit and push if changed
+          cd .devcontainer
+          bash install.sh
+          sudo cp /usr/local/bin/xray /usr/local/bin/xray
+          sudo mkdir -p /usr/local/etc/xray
+          sudo cp config.json /usr/local/etc/xray/config.json
+      - name: Run Xray and get VLESS link
+        run: |
+          sudo /usr/local/bin/xray run -c /usr/local/etc/xray/config.json &
+          sleep 10
+          curl -s -o /tmp/xray-output.json http://127.0.0.1:8080/config
+          cat /tmp/xray-output.json | jq -r '.outbounds[0].settings.vnext[0].users[0].id' > uuid.txt
+          echo "vless://$(cat uuid.txt)@$(curl -s ifconfig.me):443?security=reality&sni=github.com&type=tcp" > vless_link.txt
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vless_link.txt
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update VLESS config link" && git push)
+          git commit -m "Add VLESS config" || echo "No changes"
+          git push
