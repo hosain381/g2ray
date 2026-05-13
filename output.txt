@@ -1,3 +1,4 @@
+============== محتوای command.sh ==============
 #!/bin/bash
 echo "=== تست دامنه‌های کاندید برای تونل ==="
 for domain in github.io pages.dev workers.dev trycloudflare.com; do
@@ -10,3 +11,11 @@ for domain in github.io pages.dev workers.dev trycloudflare.com; do
   fi
 done
 echo "=== پایان تست ==="
+============== خروجی =========================
+=== تست دامنه‌های کاندید برای تونل ===
+Testing github.io ... ✅ باز (HTTP 301)
+Testing pages.dev ... ✅ باز (HTTP 301)
+Testing workers.dev ... ✅ باز (HTTP 301)
+Testing trycloudflare.com ... ✅ باز (HTTP 200)
+=== پایان تست ===
+Exit code: 0
