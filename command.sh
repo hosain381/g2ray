@@ -1,55 +1,27 @@
 #!/bin/bash
-set -e
+CODESPACE_NAME="super-duper-acorn-x5qrgwwr5rq9h9qpv"
+SNI="${CODESPACE_NAME}-443.app.github.dev"
 
-REPO="hosain381/g2ray"                # مخزن G2Ray (فورک خودتان)
-PAT="${{ ff }}"           # توکن شخصی (از Secrets می‌خواند)
-
-echo "=== نصب GitHub CLI ==="
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-sudo apt update -qq && sudo apt install -y gh
-
-echo "=== ورود به GitHub CLI ==="
-echo "$PAT" | gh auth login --with-token
-
-echo "=== ساخت Codespace از $REPO ==="
-# ساخت Codespace با timeout ۳۰ دقیقه (بعد از آن خاموش می‌شود)
-gh codespace create --repo "$REPO" --branch main --machine basicLinux32gb --idle-timeout 30m 2>&1 | tee /tmp/create_output.txt
-
-# استخراج نام Codespace (الگویی مانند: codespace-funky-potato-XXXX)
-CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9]+-[a-zA-Z0-9]+' /tmp/create_output.txt | tail -1)
-if [ -z "$CODESPACE_NAME" ]; then
-    echo "❌ نتوانستیم نام Codespace را پیدا کنیم. خروجی ساخت:"
-    cat /tmp/create_output.txt
-    exit 1
-fi
-echo "✅ Codespace name: $CODESPACE_NAME"
-
-echo "=== منتظر آماده‌سازی Codespace (حداکثر ۵ دقیقه) ==="
-for i in {1..30}; do
-    STATE=$(gh codespace list --repo "$REPO" --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
-    if [ "$STATE" = "Available" ]; then
-        echo "✅ Codespace آماده شد."
-        break
-    fi
-    sleep 10
-done
-
-if [ "$STATE" != "Available" ]; then
-    echo "⚠️ Codespace هنوز آماده نیست. وضعیت: $STATE"
-    # حتی اگر آماده نباشد، شاید پورت‌ها در حال راه‌اندازی باشند؛ ادامه می‌دهیم
+echo "=== تست اتصال TCP به پورت ۴۴۳ ==="
+# تلاش برای برقراری اتصال TCP (با timeout کوتاه)
+timeout 5 bash -c "echo >/dev/tcp/${SNI}/443" 2>&1
+if [ $? -eq 0 ]; then
+    echo "✅ پورت ۴۴۳ باز است (TCP connection successful)"
+else
+    echo "❌ پورت ۴۴۳ بسته است یا در دسترس نیست"
 fi
 
-# لینک VLESS ثابت است و بر اساس UUID داخل config.json ساخته می‌شود
-SNI="${super-duper-acorn-x5qrgwwr5rq9h9qpv}-443.app.github.dev"
-VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
+echo ""
+echo "=== تست TLS handshake (گرفتن گواهی) ==="
+# تلاش برای گرفتن گواهی SSL
+echo | timeout 5 openssl s_client -connect "${SNI}:443" -servername "${SNI}" 2>&1 | grep -E "subject=|issuer=|Verify return code"
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "✅ TLS handshake موفقیت‌آمیز بود"
+else
+    echo "❌ TLS handshake شکست خورد"
+fi
 
-echo "=== ✅ لینک VLESS شما ==="
-echo "$VLESS_LINK"
-echo "$VLESS_LINK" > ./vless_link.txt
-
-echo "=== ℹ️ برای جلوگیری از هدر رفتن اعتبار، پس از استفاده Codespace را متوقف کنید: ==="
-echo "gh codespace stop -c $CODESPACE_NAME"echo "$VLESS_LINK" > ./vless_link.txt
-
-echo "=== ℹ️ برای جلوگیری از هدر رفتن اعتبار، پس از استفاده Codespace را متوقف کنید: ==="
-echo "gh codespace stop -c $CODESPACE_NAME"
+echo ""
+echo "=== تلاش برای صحبت با Xray با یه درخواست HTTP ساده ==="
+# Xray با xhttp ممکنه به یه درخواست HTTP معمولی جواب نده، ولی ما چک می‌کنیم
+curl -s -o /dev/null -w "HTTP code: %{http_code}\n" --connect-timeout 5 --max-time 10 "https://${SNI}/" || echo "Curl failed"
