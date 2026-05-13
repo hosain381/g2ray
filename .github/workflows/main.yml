@@ -1,22 +1,37 @@
 name: Definitive Xray Test
 on: workflow_dispatch
+
+# 👇 این بخش دسترسی نوشتن روی مخزن را فراهم می‌کند
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install Xray
         run: |
+          # مسیر فایل را با منبع رسمی جایگزین کنید (اختیاری)
           wget -O /tmp/xray.zip "https://github.com/hosain381/aio-downloader/raw/refs/heads/main/direct/Xray-linux-64.zip_ezqld.zip"
           unzip /tmp/xray.zip -d /tmp/xray
+          # اطمینان از وجود فایل اجرایی
+          if [ ! -f /tmp/xray/xray ]; then
+            echo "::error::فایل xray در محتویات zip پیدا نشد"
+            exit 1
+          fi
           sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
+
       - name: Save Xray version to file
         run: /usr/local/bin/xray version > xray_version.txt 2>&1
+
       - name: Commit and push version file
         run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add xray_version.txt
-          git commit -m "Add Xray version proof" || echo "No changes"
+          git commit -m "Add Xray version proof" || echo "No changes to commit"
           git push
