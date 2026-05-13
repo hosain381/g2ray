@@ -1,41 +1,14 @@
-============== محتوای command.sh ==============
-#!/bin/bash
-CODESPACE_NAME="super-duper-acorn-x5qrgwwr5rq9h9qpv"
-SNI="${CODESPACE_NAME}-443.app.github.dev"
+=== ورود به GitHub CLI ===
+=== بررسی و راه‌اندازی Xray در Codespace ===
+error getting ssh server details: failed to start SSH server: 
+Please check if an SSH server is installed in the container.
+If the docker image being used for the codespace does not have an SSH server,
+install it in your Dockerfile or, for codespaces that use Debian-based images,
+you can add the following to your devcontainer.json:
 
-echo "=== تست اتصال TCP به پورت ۴۴۳ ==="
-# تلاش برای برقراری اتصال TCP (با timeout کوتاه)
-timeout 5 bash -c "echo >/dev/tcp/${SNI}/443" 2>&1
-if [ $? -eq 0 ]; then
-    echo "✅ پورت ۴۴۳ باز است (TCP connection successful)"
-else
-    echo "❌ پورت ۴۴۳ بسته است یا در دسترس نیست"
-fi
+"features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+        "version": "latest"
+    }
+}
 
-echo ""
-echo "=== تست TLS handshake (گرفتن گواهی) ==="
-# تلاش برای گرفتن گواهی SSL
-echo | timeout 5 openssl s_client -connect "${SNI}:443" -servername "${SNI}" 2>&1 | grep -E "subject=|issuer=|Verify return code"
-if [ ${PIPESTATUS[0]} -eq 0 ]; then
-    echo "✅ TLS handshake موفقیت‌آمیز بود"
-else
-    echo "❌ TLS handshake شکست خورد"
-fi
-
-echo ""
-echo "=== تلاش برای صحبت با Xray با یه درخواست HTTP ساده ==="
-# Xray با xhttp ممکنه به یه درخواست HTTP معمولی جواب نده، ولی ما چک می‌کنیم
-curl -s -o /dev/null -w "HTTP code: %{http_code}\n" --connect-timeout 5 --max-time 10 "https://${SNI}/" || echo "Curl failed"
-============== خروجی =========================
-=== تست اتصال TCP به پورت ۴۴۳ ===
-✅ پورت ۴۴۳ باز است (TCP connection successful)
-
-=== تست TLS handshake (گرفتن گواهی) ===
-subject=C = US, ST = Washington, L = Redmond, O = Microsoft Corporation, CN = app.github.dev
-issuer=C = US, O = DigiCert Inc, CN = DigiCert Global G2 TLS RSA SHA256 2020 CA1
-Verify return code: 0 (ok)
-✅ TLS handshake موفقیت‌آمیز بود
-
-=== تلاش برای صحبت با Xray با یه درخواست HTTP ساده ===
-HTTP code: 404
-Exit code: 0
