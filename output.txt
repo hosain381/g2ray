@@ -6,53 +6,14 @@ github.com
   - Git operations protocol: https
   - Token: ghp_************************************
   - Token scopes: 'codespace', 'read:org', 'repo', 'workflow'
-=== ایجاد اسکریپت راه‌انداز Xray ===
-
-WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
-
-81 packages can be upgraded. Run 'apt list --upgradable' to see them.
-
-WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
-
-Reading package lists...
-Building dependency tree...
-Reading state information...
-The following additional packages will be installed:
-  libjq1
-The following packages will be upgraded:
-  jq libjq1
-2 upgraded, 0 newly installed, 0 to remove and 79 not upgraded.
-Need to get 187 kB of archives.
-After this operation, 0 B of additional disk space will be used.
-Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
-Get:2 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 jq amd64 1.6-2.1ubuntu3.2 [52.5 kB]
-Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libjq1 amd64 1.6-2.1ubuntu3.2 [135 kB]
-Fetched 187 kB in 0s (1545 kB/s)
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 286901 files and directories currently installed.)
-Preparing to unpack .../jq_1.6-2.1ubuntu3.2_amd64.deb ...
-Unpacking jq (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
-Preparing to unpack .../libjq1_1.6-2.1ubuntu3.2_amd64.deb ...
-Unpacking libjq1:amd64 (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
-Setting up libjq1:amd64 (1.6-2.1ubuntu3.2) ...
-Setting up jq (1.6-2.1ubuntu3.2) ...
-Processing triggers for man-db (2.10.2-1) ...
-Not building database; man-db/auto-update is not 'true'.
-Processing triggers for libc-bin (2.35-0ubuntu3.13) ...
-
-Running kernel seems to be up-to-date.
-
-No services need to be restarted.
-
-No containers need to be restarted.
-
-No user sessions are running outdated binaries.
-
-No VM guests are running outdated hypervisor (qemu) binaries on this host.
-=== ثبت و ارسال تغییرات ===
-تغییری برای commit وجود ندارد.
-=== حذف Codespace قدیمی ===
-Codespace قدیمی وجود نداشت.
-=== ساخت Codespace جدید ===
+=== 🧹 پاکسازی همه Codespaceهای قبلی ===
+لیست Codespaceهای فعلی:
+literate-space-system-wrjvq77vrv4gf54p6	literate space system	hosain381/my-tunnel-project	main	Shutdown	2026-05-10T02:46:45Z
+turbo-fishstick-697vxggv9rjwhqv6	turbo fishstick	hosain381/g2ray	master	Available	2026-05-13T18:47:15Z
+upgraded-space-disco-g4wxvqqx4x6r3vv4j	upgraded space disco	hosain381/g2ray	master	Available	2026-05-13T18:55:23Z
+در حال حذف همه Codespaceها...
+=== 🚀 ساخت Codespace جدید (۵-۷ دقیقه صبر) ===
   ✓ Codespaces usage for this repository is paid for by hosain381
-error creating codespace: HTTP 400: You have too many codespaces running. Please stop some and try again. (https://api.github.com/user/codespaces)
-❌ نام Codespace پیدا نشد.
+redesigned-space-trout-wrjvq77vrvpg3v55g
+✅ Codespace: redesigned-space-trout-wrjvq77vrvpg3v55g
+=== منتظر آماده‌سازی (حداکثر ۶ دقیقه) ===
