@@ -1,13 +1,15 @@
-name: Web Shell (Reliable)
+name: Web Shell (Bug-Free)
 
 on:
   workflow_dispatch:
     inputs:
       command:
-        description: 'دستور bash را وارد کنید'
+        description: 'دستور bash (می‌تواند چند خطی باشد)'
         required: true
         type: string
-        default: 'echo "سلام! رانر فعال است." && date'
+        default: |
+          echo "سلام! رانر فعال است."
+          date
 
 permissions:
   contents: write
@@ -18,29 +20,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: اجرای دستور و ذخیره لاک کامل
+      - name: اجرای فرمان
         run: |
-          echo "============== دستور دریافتی ==============" | tee /tmp/full_log.txt
+          echo "============== فرمان دریافتی ==============" | tee /tmp/full_log.txt
           echo "${{ github.event.inputs.command }}" | tee -a /tmp/full_log.txt
-          echo "============== خروجی =====================" | tee -a /tmp/full_log.txt
-          bash -c "${{ github.event.inputs.command }}" 2>&1 | tee -a /tmp/full_log.txt
+          echo "============== شروع خروجی =================" | tee -a /tmp/full_log.txt
+          
+          # ذخیره فرمان در یک فایل موقت و اجرای آن
+          cat > /tmp/user_script.sh << 'SCRIPT'
+          ${{ github.event.inputs.command }}
+          SCRIPT
+          
+          chmod +x /tmp/user_script.sh
+          /tmp/user_script.sh 2>&1 | tee -a /tmp/full_log.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "Exit code: $EXIT_CODE" | tee -a /tmp/full_log.txt
-          # کپی فایل لاک به مسیر workspace (برای commit)
+          
+          # ذخیره در workspace برای commit
           cp /tmp/full_log.txt ./output.txt
 
-      - name: تلاش برای commit و push خروجی
+      - name: تلاش برای آپلود خروجی به مخزن
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output.txt
-          git commit -m "پاسخ: ${{ github.event.inputs.command }}" || echo "No changes to commit"
-          git push || echo "⚠️ Push failed (احتمالاً نیاز به PAT دارد)"
+          git commit -m "پاسخ: اجرای دستور" || echo "بدون تغییر"
+          git push || echo "⚠️ Push ناموفق - اما خروجی در artifact موجود است"
 
-      - name: آپلود لاک به عنوان artifact (همیشه در دسترس)
+      - name: ذخیره خروجی به عنوان artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: full-execution-log
+          name: shell-output
           path: /tmp/full_log.txt
