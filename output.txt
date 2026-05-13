@@ -1,16 +1,48 @@
 === ورود به GitHub CLI ===
-=== ویرایش devcontainer.json برای راه‌اندازی خودکار Xray ===
-Cloning into '/tmp/repo'...
-Author identity unknown
+=== ایجاد start-xray.sh و به‌روزرسانی devcontainer.json ===
 
-*** Please tell me who you are.
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
 
-Run
+81 packages can be upgraded. Run 'apt list --upgradable' to see them.
 
-  git config --global user.email "you@example.com"
-  git config --global user.name "Your Name"
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
 
-to set your account's default identity.
-Omit --global to set the identity only in this repository.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libjq1
+The following packages will be upgraded:
+  jq libjq1
+2 upgraded, 0 newly installed, 0 to remove and 79 not upgraded.
+Need to get 187 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Get:2 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 jq amd64 1.6-2.1ubuntu3.2 [52.5 kB]
+Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libjq1 amd64 1.6-2.1ubuntu3.2 [135 kB]
+Fetched 187 kB in 2s (82.2 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 286901 files and directories currently installed.)
+Preparing to unpack .../jq_1.6-2.1ubuntu3.2_amd64.deb ...
+Unpacking jq (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
+Preparing to unpack .../libjq1_1.6-2.1ubuntu3.2_amd64.deb ...
+Unpacking libjq1:amd64 (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
+Setting up libjq1:amd64 (1.6-2.1ubuntu3.2) ...
+Setting up jq (1.6-2.1ubuntu3.2) ...
+Processing triggers for man-db (2.10.2-1) ...
+Not building database; man-db/auto-update is not 'true'.
+Processing triggers for libc-bin (2.35-0ubuntu3.13) ...
 
-fatal: empty ident name (for <runner@runnervmrc6n4.dtj4yddoao4ujjevhu1asbapuf.cx.internal.cloudapp.net>) not allowed
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+[master 65c4508] Auto-start Xray on boot
+ 2 files changed, 37 insertions(+), 2 deletions(-)
+ create mode 100755 .devcontainer/start-xray.sh
+error: src refspec main does not match any
+error: failed to push some refs to 'https://github.com/hosain381/g2ray'
