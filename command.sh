@@ -1,29 +1,33 @@
 #!/bin/bash
-# فعال کردن نمایش خطاها و ذخیره‌ی همه در output.txt
-exec 2>&1
-set -x  # همه دستورات رو قبل از اجرا نشون بده
+set -e  # توقف در صورت بروز خطا (بدون set -x برای امنیت)
 
 REPO="hosain381/g2ray"
 BRANCH="main"
 
-echo "=== نصب GitHub CLI (اگر نباشه) ==="
+# --- ۱. نصب GitHub CLI (اگر نصب نباشد) ---
+echo "=== نصب پیش‌نیازها ==="
 if ! command -v gh &>/dev/null; then
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
     sudo apt update -qq && sudo apt install -y gh
 fi
 
-echo "=== ورود به GitHub CLI ==="
-echo "$GH_PAT" | gh auth login --with-token
+# --- ۲. احراز هویت امن (بدون چاپ توکن) ---
+echo "=== احراز هویت در GitHub CLI ==="
+export GH_TOKEN="$GH_PAT"
+gh auth status  # فقط برای بررسی
 
-# پیکربندی git
+# تنظیم git برای استفاده از اعتبارنامه gh
+gh auth setup-git
+
+# پیکربندی git برای commit
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
-echo "=== ایجاد فایل‌های ضروری ==="
+# --- ۳. ایجاد فایل‌های ضروری برای راه‌اندازی خودکار Xray ---
+echo "=== ایجاد اسکریپت راه‌انداز Xray ==="
 mkdir -p .devcontainer
 
-# ساخت start-xray.sh
 cat > .devcontainer/start-xray.sh << 'STARTSCRIPT'
 #!/bin/bash
 set -e
@@ -73,27 +77,26 @@ else
 DEVEOF
 fi
 
-echo "=== تلاش برای commit و push ==="
+# --- ۴. ثبت تغییرات در مخزن ---
+echo "=== ثبت و ارسال تغییرات ==="
 git add .devcontainer/start-xray.sh .devcontainer/devcontainer.json
 if git diff --staged --quiet; then
-    echo "هیچ تغییری برای commit وجود نداره. ادامه می‌دیم."
+    echo "تغییری برای commit وجود ندارد."
 else
-    git commit -m "Auto-start Xray on boot"
-    git push origin "$BRANCH" || {
-        echo "Push با شکست مواجه شد. تلاش با توکن مستقیم..."
-        git push https://x-access-token:$GH_PAT@github.com/$REPO.git "$BRANCH"
-    }
+    git commit -m "افزودن راه‌انداز خودکار Xray"
+    git push origin "$BRANCH"  # امن با gh auth setup-git
 fi
 
-echo "=== حذف Codespace قدیمی ==="
+# --- ۵. مدیریت Codespace ---
+echo "=== حذف Codespace قدیمی (در صورت وجود) ==="
 gh codespace delete --codespace super-duper-acorn-x5qrgwwr5rq9h9qpv 2>/dev/null || echo "Codespace قدیمی وجود نداشت."
 
-echo "=== ساخت Codespace جدید (۵-۷ دقیقه صبر) ==="
+echo "=== ساخت Codespace جدید (۵-۷ دقیقه صبر کنید) ==="
 gh codespace create --repo "$REPO" --branch "$BRANCH" --machine basicLinux32gb --idle-timeout 60m 2>&1 | tee /tmp/create_output.txt
 
 CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9]+-[a-zA-Z0-9]+' /tmp/create_output.txt | tail -1)
 if [ -z "$CODESPACE_NAME" ]; then
-    echo "❌ نتونستیم نام Codespace رو پیدا کنیم."
+    echo "❌ نتوانستیم نام Codespace جدید را پیدا کنیم."
     exit 1
 fi
 echo "✅ Codespace جدید: $CODESPACE_NAME"
@@ -102,17 +105,17 @@ echo "=== منتظر آماده‌سازی (حداکثر ۶ دقیقه) ==="
 for i in {1..36}; do
     STATE=$(gh codespace list --repo "$REPO" --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
     if [ "$STATE" = "Available" ]; then
-        echo "✅ آماده شد."
+        echo "✅ Codespace آماده شد."
         break
     fi
     sleep 10
 done
 
-# لینک نهایی
+# --- ۶. لینک نهایی ---
 SNI="${CODESPACE_NAME}-443.app.github.dev"
 VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
-echo "=== ✅ لینک VLESS ==="
+echo "=== ✅ لینک VLESS شما ==="
 echo "$VLESS_LINK"
 echo "$VLESS_LINK" > ./vless_link.txt
 
-echo "تمام."
+echo "تمام. می‌توانید لینک را از فایل vless_link.txt بردارید."
