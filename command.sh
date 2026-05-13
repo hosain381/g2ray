@@ -15,85 +15,32 @@ echo "=== احراز هویت ==="
 export GH_TOKEN="$GH_PAT"
 gh auth status
 gh auth setup-git
-git config user.name "github-actions[bot]"
-git config user.email "github-actions[bot]@users.noreply.github.com"
 
-echo "=== ایجاد اسکریپت راه‌انداز Xray ==="
-mkdir -p .devcontainer
-cat > .devcontainer/start-xray.sh << 'STARTSCRIPT'
-#!/bin/bash
-set -e
-if [ ! -f /usr/local/bin/xray ]; then
-    wget -q -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
-    unzip -q /tmp/xray.zip -d /tmp/xray_install
-    sudo cp /tmp/xray_install/xray /usr/local/bin/xray
-    sudo chmod +x /usr/local/bin/xray
-    rm -rf /tmp/xray.zip /tmp/xray_install
-fi
-sudo pkill xray 2>/dev/null || true
-sudo mkdir -p /etc
-sudo tee /etc/config.json > /dev/null << 'CONFIG'
-{
-  "inbounds": [{
-    "port": 443,
-    "protocol": "vless",
-    "settings": {
-      "clients": [{"id": "550e8400-e29b-41d4-a716-446655440000"}],
-      "decryption": "none"
-    },
-    "streamSettings": {
-      "network": "xhttp",
-      "xhttpSettings": {
-        "mode": "packet-up",
-        "path": "/"
-      }
-    }
-  }],
-  "outbounds": [{"protocol": "freedom"}]
-}
-CONFIG
-nohup sudo /usr/local/bin/xray -c /etc/config.json > /tmp/xray.log 2>&1 &
-STARTSCRIPT
+echo "=== 🧹 پاکسازی همه Codespaceهای قبلی ==="
+# گرفتن لیست همه Codespaceها
+echo "لیست Codespaceهای فعلی:"
+gh codespace list
 
-chmod +x .devcontainer/start-xray.sh
+# متوقف کردن و حذف همه Codespaceها
+echo "در حال حذف همه Codespaceها..."
+gh codespace delete --all --force 2>&1 || echo "هیچ Codespaceی برای حذف وجود نداشت."
+sleep 5
 
-if [ -f .devcontainer/devcontainer.json ]; then
-    sudo apt update -qq && sudo apt install -y jq
-    jq '. + {"postCreateCommand": "bash .devcontainer/start-xray.sh"}' .devcontainer/devcontainer.json > tmp.json && mv tmp.json .devcontainer/devcontainer.json
-else
-    cat > .devcontainer/devcontainer.json << 'DEVEOF'
-{
-    "postCreateCommand": "bash .devcontainer/start-xray.sh"
-}
-DEVEOF
-fi
-
-echo "=== ثبت و ارسال تغییرات ==="
-git add .devcontainer/start-xray.sh .devcontainer/devcontainer.json
-if git diff --staged --quiet; then
-    echo "تغییری برای commit وجود ندارد."
-else
-    git commit -m "افزودن راه‌انداز خودکار Xray"
-    git push origin "$BRANCH"
-fi
-
-echo "=== حذف Codespace قدیمی ==="
-gh codespace delete --codespace super-duper-space-capybara-7v47j997v9xgfxxrv 2>/dev/null || echo "Codespace قدیمی وجود نداشت."
-
-echo "=== ساخت Codespace جدید ==="
+echo "=== 🚀 ساخت Codespace جدید (۵-۷ دقیقه صبر) ==="
 gh codespace create --repo "$REPO" --branch "$BRANCH" --machine basicLinux32gb --idle-timeout 60m 2>&1 | tee /tmp/create_output.txt
 
-# الگوی اصلاح‌شده: تطبیق با نام‌های چندبخشی
-CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9-]+' /tmp/create_output.txt | tail -1)
+# استخراج نام — این بار با الگوی ساده‌تر
+CODESPACE_NAME=$(grep -oE '[a-z]+-[a-z]+-[a-z]+-[a-z0-9]+' /tmp/create_output.txt | head -1)
 if [ -z "$CODESPACE_NAME" ]; then
-    echo "❌ نام Codespace پیدا نشد."
+    echo "❌ نام Codespace پیدا نشد. خروجی خام:"
+    cat /tmp/create_output.txt
     exit 1
 fi
 echo "✅ Codespace: $CODESPACE_NAME"
 
-echo "=== منتظر آماده‌سازی ==="
+echo "=== منتظر آماده‌سازی (حداکثر ۶ دقیقه) ==="
 for i in {1..36}; do
-    STATE=$(gh codespace list --repo "$REPO" --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
+    STATE=$(gh codespace list --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
     if [ "$STATE" = "Available" ]; then
         echo "✅ آماده شد."
         break
