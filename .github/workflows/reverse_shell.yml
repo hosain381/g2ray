@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'command.txt'    # تنها زمانی اجرا شود که فایل command.txt تغییر کند
+      - 'command.txt'
 
 permissions:
   contents: write
@@ -18,7 +18,7 @@ jobs:
       - name: Run command from file
         run: |
           if [ -f command.txt ]; then
-            echo "Executing command..."
+            echo "=== Executing command ==="
             bash command.txt > output.txt 2>&1
             echo "Exit code: $?" >> output.txt
           else
