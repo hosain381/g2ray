@@ -1,5 +1,12 @@
-=== ورود به GitHub CLI ===
-=== ایجاد start-xray.sh و به‌روزرسانی devcontainer.json ===
+=== نصب پیش‌نیازها ===
+=== احراز هویت در GitHub CLI ===
+github.com
+  ✓ Logged in to github.com account hosain381 (GH_TOKEN)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: ghp_************************************
+  - Token scopes: 'codespace', 'read:org', 'repo', 'workflow'
+=== ایجاد اسکریپت راه‌انداز Xray ===
 
 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
 
@@ -20,7 +27,7 @@ After this operation, 0 B of additional disk space will be used.
 Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
 Get:2 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 jq amd64 1.6-2.1ubuntu3.2 [52.5 kB]
 Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libjq1 amd64 1.6-2.1ubuntu3.2 [135 kB]
-Fetched 187 kB in 2s (82.2 kB/s)
+Fetched 187 kB in 1s (296 kB/s)
 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 286901 files and directories currently installed.)
 Preparing to unpack .../jq_1.6-2.1ubuntu3.2_amd64.deb ...
 Unpacking jq (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
@@ -41,8 +48,11 @@ No containers need to be restarted.
 No user sessions are running outdated binaries.
 
 No VM guests are running outdated hypervisor (qemu) binaries on this host.
-[master 65c4508] Auto-start Xray on boot
- 2 files changed, 37 insertions(+), 2 deletions(-)
- create mode 100755 .devcontainer/start-xray.sh
-error: src refspec main does not match any
-error: failed to push some refs to 'https://github.com/hosain381/g2ray'
+=== ثبت و ارسال تغییرات ===
+تغییری برای commit وجود ندارد.
+=== حذف Codespace قدیمی (در صورت وجود) ===
+Codespace قدیمی وجود نداشت.
+=== ساخت Codespace جدید (۵-۷ دقیقه صبر کنید) ===
+  ✓ Codespaces usage for this repository is paid for by hosain381
+error getting devcontainer.json paths: HTTP 400: The 'ref' provided was invalid. Please specify a valid branch name or commit SHA (https://api.github.com/repositories/1235158251/codespaces/devcontainers?per_page=100&ref=main)
+❌ نتوانستیم نام Codespace جدید را پیدا کنیم.
