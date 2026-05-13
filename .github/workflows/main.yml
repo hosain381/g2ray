@@ -13,27 +13,33 @@ jobs:
 
       - name: Install Xray
         run: |
-          # دانلود فایل زیپ (از منبع رسمی یا جایگزین)
+          # دانلود فایل رسمی (با پیروی از تغییر مسیرها)
           wget -O /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip"
-          
+
+          # چک کردن سالم بودن فایل (اختیاری ولی مفید)
+          if ! unzip -t /tmp/xray.zip > /dev/null 2>&1; then
+            echo "::error::فایل زیپ خراب است یا دانلود ناقص انجام شده"
+            exit 1
+          fi
+
           # استخراج فایل‌ها
           unzip /tmp/xray.zip -d /tmp/xray_extracted
 
           # نمایش محتوای استخراج‌شده برای عیب‌یابی
           echo "=== محتوای پوشه استخراج‌شده ==="
           find /tmp/xray_extracted -type f -printf "%p\n"
-          
-          # جستجوی انعطاف‌پذیرتر برای فایل اجرایی xray
-          XRAY_BIN=$(find /tmp/xray_extracted -type f \( -name "xray" -o -name "xray_*" -o -name "xray-linux-64" \) | head -n 1)
-          
+
+          # جستجوی فایل اجرایی با الگوی بازتر
+          XRAY_BIN=$(find /tmp/xray_extracted -type f \( -name "xray" -o -name "xray*" -o -name "xray-*" \) | head -n 1)
+
           if [ -z "$XRAY_BIN" ]; then
-            echo "::error::فایل اجرایی xray در محتوای zip پیدا نشد"
+            echo "::error::هیچ فایل اجرایی xray در محتوای zip پیدا نشد"
             exit 1
           fi
-          
+
           echo "فایل اجرایی پیدا شد: $XRAY_BIN"
-          
-          # کپی به مسیر استاندارد و تنظیم مجوز اجرا
+
+          # کپی و تنظیم مجوز
           sudo cp "$XRAY_BIN" /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
 
