@@ -5,4 +5,4 @@ echo "Fetching $URL ..."
 curl -s -L --max-time 15 "$URL"
 ============== خروجی =========================
 Fetching https://ifconfig.me ...
-64.236.134.51Exit code: 0
+20.55.86.185Exit code: 0
