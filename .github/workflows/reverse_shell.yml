@@ -1,9 +1,10 @@
-name: File-Based Web Shell
+name: Web Shell (Manual + Automatic)
 
 on:
+  workflow_dispatch:   # دکمه Run را اضافه می‌کند
   push:
     paths:
-      - 'command.sh'       # فقط وقتی command.sh تغییر کند اجرا شود
+      - 'command.sh'   # هر بار command.sh تغییر کند خودکار اجرا شود
 
 permissions:
   contents: write
@@ -19,14 +20,12 @@ jobs:
           echo "============== محتوای command.sh ==============" | tee /tmp/full_log.txt
           cat command.sh | tee -a /tmp/full_log.txt
           echo "============== خروجی =========================" | tee -a /tmp/full_log.txt
-          
           chmod +x command.sh
           ./command.sh 2>&1 | tee -a /tmp/full_log.txt
           echo "Exit code: $?" | tee -a /tmp/full_log.txt
-          
           cp /tmp/full_log.txt ./output.txt
 
-      - name: آپلود خروجی به artifact
+      - name: ذخیره خروجی در artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -40,4 +39,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output.txt
           git commit -m "خروجی اجرای command.sh" || echo "بدون تغییر"
-          git push || echo "⚠️ push ناموفق - اما artifact موجود است"
+          git push || echo "⚠️ push ناموفق - خروجی در artifact موجود است"
