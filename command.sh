@@ -2,7 +2,7 @@
 set -e
 
 REPO="hosain381/g2ray"                # مخزن G2Ray (فورک خودتان)
-PAT="${{ secrets.GH_PAT }}"           # توکن شخصی (از Secrets می‌خواند)
+PAT="${{ ff }}"           # توکن شخصی (از Secrets می‌خواند)
 
 echo "=== نصب GitHub CLI ==="
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -41,12 +41,15 @@ if [ "$STATE" != "Available" ]; then
 fi
 
 # لینک VLESS ثابت است و بر اساس UUID داخل config.json ساخته می‌شود
-SNI="${CODESPACE_NAME}-443.app.github.dev"
+SNI="${super-duper-acorn-x5qrgwwr5rq9h9qpv}-443.app.github.dev"
 VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
 
 echo "=== ✅ لینک VLESS شما ==="
 echo "$VLESS_LINK"
 echo "$VLESS_LINK" > ./vless_link.txt
+
+echo "=== ℹ️ برای جلوگیری از هدر رفتن اعتبار، پس از استفاده Codespace را متوقف کنید: ==="
+echo "gh codespace stop -c $CODESPACE_NAME"echo "$VLESS_LINK" > ./vless_link.txt
 
 echo "=== ℹ️ برای جلوگیری از هدر رفتن اعتبار، پس از استفاده Codespace را متوقف کنید: ==="
 echo "gh codespace stop -c $CODESPACE_NAME"
