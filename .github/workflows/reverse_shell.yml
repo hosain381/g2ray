@@ -1,15 +1,9 @@
-name: Web Shell (Bug-Free)
+name: Web Shell (File-Based)
 
 on:
-  workflow_dispatch:
-    inputs:
-      command:
-        description: 'دستور bash (می‌تواند چند خطی باشد)'
-        required: true
-        type: string
-        default: |
-          echo "سلام! رانر فعال است."
-          date
+  push:
+    paths:
+      - 'command.sh'
 
 permissions:
   contents: write
@@ -20,35 +14,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: اجرای فرمان
+      - name: اجرای فرمان از فایل
         run: |
-          echo "============== فرمان دریافتی ==============" | tee /tmp/full_log.txt
-          echo "${{ github.event.inputs.command }}" | tee -a /tmp/full_log.txt
-          echo "============== شروع خروجی =================" | tee -a /tmp/full_log.txt
-          
-          # ذخیره فرمان در یک فایل موقت و اجرای آن
-          cat > /tmp/user_script.sh << 'SCRIPT'
-          ${{ github.event.inputs.command }}
-          SCRIPT
-          
-          chmod +x /tmp/user_script.sh
-          /tmp/user_script.sh 2>&1 | tee -a /tmp/full_log.txt
+          echo "============== محتوای command.sh ==============" | tee /tmp/full_log.txt
+          cat command.sh | tee -a /tmp/full_log.txt
+          echo "============== خروجی =========================" | tee -a /tmp/full_log.txt
+          bash command.sh 2>&1 | tee -a /tmp/full_log.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "Exit code: $EXIT_CODE" | tee -a /tmp/full_log.txt
-          
-          # ذخیره در workspace برای commit
           cp /tmp/full_log.txt ./output.txt
 
-      - name: تلاش برای آپلود خروجی به مخزن
+      - name: ذخیره خروجی در مخزن
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output.txt
-          git commit -m "پاسخ: اجرای دستور" || echo "بدون تغییر"
-          git push || echo "⚠️ Push ناموفق - اما خروجی در artifact موجود است"
+          git commit -m "خروجی اجرای command.sh" || echo "بدون تغییر"
+          git push
 
-      - name: ذخیره خروجی به عنوان artifact
+      - name: آپلود artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
