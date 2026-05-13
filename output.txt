@@ -27,7 +27,7 @@ After this operation, 0 B of additional disk space will be used.
 Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
 Get:2 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 jq amd64 1.6-2.1ubuntu3.2 [52.5 kB]
 Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libjq1 amd64 1.6-2.1ubuntu3.2 [135 kB]
-Fetched 187 kB in 0s (2092 kB/s)
+Fetched 187 kB in 0s (382 kB/s)
 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 286901 files and directories currently installed.)
 Preparing to unpack .../jq_1.6-2.1ubuntu3.2_amd64.deb ...
 Unpacking jq (1.6-2.1ubuntu3.2) over (1.6-2.1ubuntu3.1) ...
@@ -54,5 +54,5 @@ No VM guests are running outdated hypervisor (qemu) binaries on this host.
 Codespace قدیمی وجود نداشت.
 === ساخت Codespace جدید (۵-۷ دقیقه صبر کنید) ===
   ✓ Codespaces usage for this repository is paid for by hosain381
-turbo-fishstick-697vxggv9rjwhqv6
+super-duper-space-capybara-7v47j997v9xgfxxrv
 ❌ نتوانستیم نام Codespace جدید را پیدا کنیم.
