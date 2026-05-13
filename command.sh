@@ -4,7 +4,7 @@ set -e
 REPO="hosain381/g2ray"
 BRANCH="main"
 
-# --- نصب GitHub CLI ---
+# --- نصب GitHub CLI (اگر نباشد) ---
 if ! command -v gh &>/dev/null; then
     echo "=== نصب GitHub CLI ==="
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -15,14 +15,17 @@ fi
 echo "=== ورود به GitHub CLI ==="
 echo "$GH_PAT" | gh auth login --with-token
 
-# --- کلون مخزن و ویرایش devcontainer.json ---
-echo "=== ویرایش devcontainer.json برای راه‌اندازی خودکار Xray ==="
-git clone "https://x-access-token:$GH_PAT@github.com/$REPO.git" /tmp/repo
-cd /tmp/repo/.devcontainer
+# --- پیکربندی git برای commit (همان کاربر actions) ---
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
 
-# یک اسکریپت راه‌انداز می‌سازیم که Xray را نصب و اجرا کند
-cat > start-xray.sh << 'STARTSCRIPT'
+# --- ایجاد فایل‌های ضروری در همان workspace (که checkout شده) ---
+echo "=== ایجاد start-xray.sh و به‌روزرسانی devcontainer.json ==="
+mkdir -p .devcontainer
+
+cat > .devcontainer/start-xray.sh << 'STARTSCRIPT'
 #!/bin/bash
+set -e
 if [ ! -f /usr/local/bin/xray ]; then
     wget -q -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
     unzip -q /tmp/xray.zip -d /tmp/xray_install
@@ -55,47 +58,47 @@ CONFIG
 nohup sudo /usr/local/bin/xray -c /etc/config.json > /tmp/xray.log 2>&1 &
 STARTSCRIPT
 
-chmod +x start-xray.sh
+chmod +x .devcontainer/start-xray.sh
 
-# اضافه کردن دستور postCreateCommand به devcontainer.json
-# اگر فایل وجود دارد، postCreateCommand را اضافه/به‌روز می‌کنیم
-if [ -f devcontainer.json ]; then
-    # با jq کار می‌کنیم (اگر نصب نباشد، نصب می‌کنیم)
-    if ! command -v jq &>/dev/null; then
-        sudo apt update -qq && sudo apt install -y jq
-    fi
-    jq '. + {"postCreateCommand": "bash .devcontainer/start-xray.sh"}' devcontainer.json > tmp.json && mv tmp.json devcontainer.json
+# به‌روزرسانی devcontainer.json (اگر وجود نداشته باشد، ساخته می‌شود)
+if [ -f .devcontainer/devcontainer.json ]; then
+    # با jq ادغام می‌کنیم
+    sudo apt update -qq && sudo apt install -y jq
+    jq '. + {"postCreateCommand": "bash .devcontainer/start-xray.sh"}' .devcontainer/devcontainer.json > tmp.json && mv tmp.json .devcontainer/devcontainer.json
 else
-    # اگر فایل نبود، یک فایل ساده می‌سازیم
-    cat > devcontainer.json << 'DEVEOF'
+    cat > .devcontainer/devcontainer.json << 'DEVEOF'
 {
     "postCreateCommand": "bash .devcontainer/start-xray.sh"
 }
 DEVEOF
 fi
 
-git add start-xray.sh devcontainer.json
-git commit -m "Auto-start Xray on Codespace boot"
+# --- Commit و push تغییرات ---
+git add .devcontainer/start-xray.sh .devcontainer/devcontainer.json
+git commit -m "Auto-start Xray on boot" || echo "No changes to commit"
 git push origin "$BRANCH"
 
-# --- بازسازی Codespace موجود ---
-echo "=== بازسازی (rebuild) Codespace ==="
-gh codespace rebuild --codespace super-duper-acorn-x5qrgwwr5rq9h9qpv 2>&1 || {
-    echo "Rebuild ناموفق، تلاش برای ساخت Codespace جدید..."
-    gh codespace create --repo "$REPO" --branch "$BRANCH" --machine basicLinux32gb --idle-timeout 60m 2>&1 | tee /tmp/create_output.txt
-    CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9]+-[a-zA-Z0-9]+' /tmp/create_output.txt | tail -1)
-}
+# --- حذف Codespace قدیمی (اگر وجود دارد) ---
+echo "=== حذف Codespace قبلی ==="
+gh codespace delete --codespace super-duper-acorn-x5qrgwwr5rq9h9qpv 2>/dev/null || echo "Codespace قبلی یافت نشد."
 
-# اگر rebuild موفق بود، همان نام قبلی را نگه می‌داریم
+# --- ساخت Codespace جدید (با صبر کافی) ---
+echo "=== ساخت Codespace جدید (۵-۷ دقیقه صبر) ==="
+gh codespace create --repo "$REPO" --branch "$BRANCH" --machine basicLinux32gb --idle-timeout 60m 2>&1 | tee /tmp/create_output.txt
+
+CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9]+-[a-zA-Z0-9]+' /tmp/create_output.txt | tail -1)
 if [ -z "$CODESPACE_NAME" ]; then
-    CODESPACE_NAME="super-duper-acorn-x5qrgwwr5rq9h9qpv"
+    echo "❌ نتوانستیم نام Codespace را بیابیم. خروجی:"
+    cat /tmp/create_output.txt
+    exit 1
 fi
+echo "✅ Codespace جدید: $CODESPACE_NAME"
 
-echo "=== منتظر آماده‌سازی Codespace (حداکثر ۶ دقیقه) ==="
+echo "=== منتظر آماده‌سازی (تا ۶ دقیقه) ==="
 for i in {1..36}; do
     STATE=$(gh codespace list --repo "$REPO" --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
     if [ "$STATE" = "Available" ]; then
-        echo "✅ Codespace آماده است."
+        echo "✅ آماده شد."
         break
     fi
     sleep 10
