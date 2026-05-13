@@ -23,7 +23,7 @@ Get:2 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 openssh-sf
 Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 openssh-server amd64 1:8.9p1-3ubuntu0.15 [435 kB]
 Get:4 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 openssh-client amd64 1:8.9p1-3ubuntu0.15 [904 kB]
 Preconfiguring packages ...
-Fetched 1378 kB in 0s (4588 kB/s)
+Fetched 1378 kB in 0s (8433 kB/s)
 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 286901 files and directories currently installed.)
 Preparing to unpack .../openssh-sftp-server_1%3a8.9p1-3ubuntu0.15_amd64.deb ...
 Unpacking openssh-sftp-server (1:8.9p1-3ubuntu0.15) over (1:8.9p1-3ubuntu0.14) ...
