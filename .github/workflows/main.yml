@@ -1,55 +1,28 @@
-name: Definitive Xray Test
+name: Final Xray Test
 on: workflow_dispatch
-
-permissions:
-  contents: write
-
 jobs:
-  test:
+  build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Xray
+      - name: Download and Install Xray
         run: |
-          # دانلود فایل رسمی (با پیروی از تغییر مسیرها)
-          wget -O /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip"
-
-          # چک کردن سالم بودن فایل (اختیاری ولی مفید)
-          if ! unzip -t /tmp/xray.zip > /dev/null 2>&1; then
-            echo "::error::فایل زیپ خراب است یا دانلود ناقص انجام شده"
-            exit 1
-          fi
-
-          # استخراج فایل‌ها
-          unzip /tmp/xray.zip -d /tmp/xray_extracted
-
-          # نمایش محتوای استخراج‌شده برای عیب‌یابی
-          echo "=== محتوای پوشه استخراج‌شده ==="
-          find /tmp/xray_extracted -type f -printf "%p\n"
-
-          # جستجوی فایل اجرایی با الگوی بازتر
-          XRAY_BIN=$(find /tmp/xray_extracted -type f \( -name "xray" -o -name "xray*" -o -name "xray-*" \) | head -n 1)
-
-          if [ -z "$XRAY_BIN" ]; then
-            echo "::error::هیچ فایل اجرایی xray در محتوای zip پیدا نشد"
-            exit 1
-          fi
-
-          echo "فایل اجرایی پیدا شد: $XRAY_BIN"
-
-          # کپی و تنظیم مجوز
-          sudo cp "$XRAY_BIN" /usr/local/bin/xray
+          wget -q "https://github.com/XTLS/Xray-core/releases/download/v1.8.23/Xray-linux-64.zip" -O /tmp/xray.zip
+          unzip -q /tmp/xray.zip -d /tmp/xray
+          sudo cp /tmp/xray/xray /usr/local/bin/xray
           sudo chmod +x /usr/local/bin/xray
 
-      - name: Save Xray version to file
-        run: /usr/local/bin/xray version > xray_version.txt 2>&1
-
-      - name: Commit and push version file
+      - name: Run Xray and Capture Output
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add xray_version.txt
-          git commit -m "Add Xray version proof" || echo "No changes to commit"
-          git push
+          sudo mkdir -p /usr/local/etc/xray
+          sudo cp .devcontainer/config.json /usr/local/etc/xray/config.json
+          sudo /usr/local/bin/xray run -c /usr/local/etc/xray/config.json 2>&1 | tee /tmp/xray.log &
+          sleep 15
+          sudo pkill xray || true
+
+      - name: Save Xray Log as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xray-log
+          path: /tmp/xray.log
