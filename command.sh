@@ -1,64 +1,52 @@
 #!/bin/bash
 set -e
 
-# 1. دانلود و نصب Xray
-echo "downloading xray"
-wget -q -O /tmp/xray.zip https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip
-echo "installing"
-unzip -q /tmp/xray.zip -d /tmp/xray_install
-sudo cp /tmp/xray_install/xray /usr/local/bin/xray
-sudo chmod +x /usr/local/bin/xray
-rm -rf /tmp/xray.zip /tmp/xray_install
-echo "installed!"
+REPO="hosain381/g2ray"                # مخزن G2Ray (فورک خودتان)
+PAT="${{ secrets.GH_PAT }}"           # توکن شخصی (از Secrets می‌خواند)
 
-# 2. ایجاد پیکربندی مستقیم (بدون نیاز به فایل در مخزن)
-sudo mkdir -p /etc
-sudo tee /etc/config.json > /dev/null << 'EOF'
-{
-  "inbounds": [
-    {
-      "port": 443,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "550e8400-e29b-41d4-a716-446655440000"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "xhttp",
-        "xhttpSettings": {
-          "mode": "packet-up",
-          "path": "/"
-        }
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "freedom"
-    }
-  ]
-}
-EOF
+echo "=== نصب GitHub CLI ==="
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update -qq && sudo apt install -y gh
 
-# 3. راه‌اندازی Xray در پس‌زمینه و ذخیره لاک
-echo "Starting Xray..."
-sudo /usr/local/bin/xray -c /etc/config.json > /tmp/xray.log 2>&1 &
-sleep 3
+echo "=== ورود به GitHub CLI ==="
+echo "$PAT" | gh auth login --with-token
 
-# 4. ساخت لینک VLESS نهایی (در Codespace واقعی آدرس پورت ۴۴۳ متفاوت است)
-# اینجا صرفاً ساختار لینک را نمایش می‌دهیم.
-# برای استفاده در Codespace، باید CODESPACE_NAME را از متغیر محیطی بخوانید.
-if [ -n "$CODESPACE_NAME" ]; then
-  SNI="${CODESPACE_NAME}-443.app.github.dev"
-else
-  SNI="YOUR_CODESPACE_NAME_HERE-443.app.github.dev"
+echo "=== ساخت Codespace از $REPO ==="
+# ساخت Codespace با timeout ۳۰ دقیقه (بعد از آن خاموش می‌شود)
+gh codespace create --repo "$REPO" --branch main --machine basicLinux32gb --idle-timeout 30m 2>&1 | tee /tmp/create_output.txt
+
+# استخراج نام Codespace (الگویی مانند: codespace-funky-potato-XXXX)
+CODESPACE_NAME=$(grep -oE 'codespace-[a-zA-Z0-9]+-[a-zA-Z0-9]+' /tmp/create_output.txt | tail -1)
+if [ -z "$CODESPACE_NAME" ]; then
+    echo "❌ نتوانستیم نام Codespace را پیدا کنیم. خروجی ساخت:"
+    cat /tmp/create_output.txt
+    exit 1
+fi
+echo "✅ Codespace name: $CODESPACE_NAME"
+
+echo "=== منتظر آماده‌سازی Codespace (حداکثر ۵ دقیقه) ==="
+for i in {1..30}; do
+    STATE=$(gh codespace list --repo "$REPO" --json name,state --jq ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
+    if [ "$STATE" = "Available" ]; then
+        echo "✅ Codespace آماده شد."
+        break
+    fi
+    sleep 10
+done
+
+if [ "$STATE" != "Available" ]; then
+    echo "⚠️ Codespace هنوز آماده نیست. وضعیت: $STATE"
+    # حتی اگر آماده نباشد، شاید پورت‌ها در حال راه‌اندازی باشند؛ ادامه می‌دهیم
 fi
 
+# لینک VLESS ثابت است و بر اساس UUID داخل config.json ساخته می‌شود
+SNI="${CODESPACE_NAME}-443.app.github.dev"
 VLESS_LINK="vless://550e8400-e29b-41d4-a716-446655440000@${SNI}:443?encryption=none&security=tls&type=xhttp&mode=packet-up"
 
-echo "VLESS Link: $VLESS_LINK"
+echo "=== ✅ لینک VLESS شما ==="
+echo "$VLESS_LINK"
 echo "$VLESS_LINK" > ./vless_link.txt
+
+echo "=== ℹ️ برای جلوگیری از هدر رفتن اعتبار، پس از استفاده Codespace را متوقف کنید: ==="
+echo "gh codespace stop -c $CODESPACE_NAME"
