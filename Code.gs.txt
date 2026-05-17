@@ -27,6 +27,9 @@
  */
 
 const AUTH_KEY = "----------";
+var EXIT_NODE_URL = "https://YOUR-DENO-URL.deno.dev";
+var EXIT_NODE_PSK = "YOUR_PSK";
+var EXIT_HOSTS = ["chatgpt.com", "claude.ai", "gemini.google.com", "console.cloud.google.com", "shell.cloud.google.com"];
 
 // Active-probing defense. When false (production default), bad AUTH_KEY
 // requests get a decoy HTML page that looks like a placeholder Apps
@@ -621,6 +624,23 @@ function _getFromCache(url, reqHeaders) {
  * encoded body exceeds CACHE_MAX_BODY_BYTES or when Cache-Control
  * forbids caching. Returns the fetch result regardless.
  */
+function _doSingle(req) {
+    // ... (اعتبارسنجی کلید)
+    
+    if (!req.u) return _json({ e: "missing URL" });
+    
+    // 🚀 [اینجا] بلوک گره خروجی را وارد کن
+    if (EXIT_HOSTS.some(function(h) { return req.u.indexOf(h) !== -1; })) {
+        var exitPayload = { u: req.u, m: req.m || "GET", h: req.h, b: req.b, k: EXIT_NODE_PSK };
+        var exitOpts = { method: 'post', contentType: 'application/json', payload: JSON.stringify(exitPayload), muteHttpExceptions: true };
+        var exitResp = UrlFetchApp.fetch(EXIT_NODE_URL, exitOpts);
+        return _json({ s: exitResp.getResponseCode(), h: _respHeaders(exitResp), b: Utilities.base64Encode(exitResp.getContent()) });
+    }
+    
+    // ادامه کد اصلی (کش و fetch مستقیم)...
+    var cacheKey = _md5(req.u);
+    // ...
+}
 function _fetchAndCache(url, reqHeaders) {
   var sheet = _initCacheSheet();
   if (!sheet) return null;
